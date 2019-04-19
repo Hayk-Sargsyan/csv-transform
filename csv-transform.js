@@ -2,15 +2,15 @@ const csv = require('fast-csv');
 const fs = require('fs');
 
 const getPath = require('./get-path');
-const createStreamByName = require('./createStreamByName');
+const createStreamByName = require('./create-stream-by-name');
 
 const csvPath = getPath();
 const streamList = {};
 
 fs.createReadStream(csvPath)
     .pipe(csv())
-    .on("data", (chunk) => handleChunk(chunk))
-    .on("end", () => {
+    .on('data', (chunk) => handleChunk(chunk))
+    .on('end', () => {
         closeAllStreams();
         console.log('Successfully Completed!');
     });

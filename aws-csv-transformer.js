@@ -18,18 +18,16 @@ module.exports.handler = function (event, context, callback) {
 };
 
 function handleChunk(chunk, fileList) {
-    let data = chunk.toString();
-    if (!data) {
-        return;
-    }
+    const data = chunk.toString();
+    if (!data) { return; }
 
-    data = data.split(',');
-    const outFileName = data[0];
+    const dataArr = data.split(',');
+    const outFileName = dataArr[0];
 
     if (!fileList[outFileName]) {
-        fileList[outFileName] = []
+        fileList[outFileName] = [];
     }
-    fileList[outFileName].push(`,${data[1]},${data[1]}`);
+    fileList[outFileName].push(`,${dataArr[1]},${dataArr[1]}`);
 }
 
 
@@ -40,13 +38,13 @@ function writeToS3(fileList, callback) {
         s3.putObject({
             Bucket: process.env.BUCKET_NAME,
             Key: `${keyFileName}.csv`,
-            Body: fileList[keyFileName].join('\n'),
-        })
+            Body: fileList[keyFileName].join('\n')
+        });
     }).promise().then(() => {
         callback(null, {
             statusCode: 200,
             headers: {
-                "Content-Type": "text/html"
+                'Content-Type': 'text/html'
             },
             body: 'Successfully Completed!'
         });
