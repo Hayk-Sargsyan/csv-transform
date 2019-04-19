@@ -1,0 +1,19 @@
+{
+  "name": "csv-convector",
+  "version": "1.0.0",
+  "description": "",
+  "main": "cvs-transform.js",
+  "scripts": {
+    "start": "node ./csv-transform.js -csv entry.csv",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Hayk Sargsyan",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.440.0",
+    "fast-csv": "^2.4.1"
+  },
+  "devDependencies": {
+    "@types/node": "^11.13.5"
+  }
+}
