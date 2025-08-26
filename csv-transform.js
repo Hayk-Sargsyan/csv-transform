@@ -12,7 +12,7 @@ fs.createReadStream(csvPath)
     .on('data', (chunk) => handleChunk(chunk))
     .on('end', () => {
         closeAllStreams();
-        console.log('Successfully Completed!');
+        console.log('Successfully Completed!!!');
     });
 
 function handleChunk(data) {
