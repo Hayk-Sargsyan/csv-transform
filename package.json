@@ -2,7 +2,7 @@
   "name": "csv-convector",
   "version": "1.0.0",
   "description": "",
-  "main": "cvs-transform.js",
+  "main": "csv-transform.js",
   "scripts": {
     "start": "node ./csv-transform.js -csv entry.csv",
     "test": "echo \"Error: no test specified\" && exit 1"
