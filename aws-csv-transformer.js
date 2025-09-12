@@ -3,50 +3,59 @@ const https = require('https');
 const aws = require('aws-sdk');
 
 module.exports.handler = function (event, context, callback) {
-    const inputLink = event.queryStringParameters['fileUrl'];
+    const inputLink = event?.queryStringParameters?.fileUrl;
 
     if (!inputLink) {
-        return callback(new Error('link not found'));
+        return callback(new Error('fileUrl query parameter is required'));
     }
 
     const fileList = {};
 
     https.get(inputLink).on('response', function (response) {
-        response.pipe(csv()).on('data', (chunk) => handleChunk(chunk, fileList));
-        response.on('end', () => writeToS3(fileList, callback));
-    });
+        const parser = csv.parse({ headers: false, ignoreEmpty: true, trim: true });
+
+        parser
+            .on('error', (err) => callback(err))
+            .on('data', (row) => handleRow(row, fileList))
+            .on('end', () => writeToS3(fileList, callback));
+
+        response.pipe(parser);
+    }).on('error', (err) => callback(err));
 };
 
-function handleChunk(chunk, fileList) {
-    const data = chunk.toString();
-    if (!data) { return; }
-
-    const dataArr = data.split(',');
-    const outFileName = dataArr[0];
+function handleRow(row, fileList) {
+    if (!row || row.length === 0) return;
+    const outFileName = String(row[0] || '').replace(/^\uFEFF/, '');
 
     if (!fileList[outFileName]) {
         fileList[outFileName] = [];
     }
-    fileList[outFileName].push(`,${dataArr[1]},${dataArr[1]}`);
-}
 
+    // Match local behavior: empty first column, then col2 and col3
+    fileList[outFileName].push(["", row[1], row[2]].join(','));
+}
 
 function writeToS3(fileList, callback) {
     const s3 = new aws.S3();
+    const bucket = process.env.BUCKET_NAME;
+    if (!bucket) return callback(new Error('Missing BUCKET_NAME env var'));
 
-    Object.keys(fileList).forEach(keyFileName => {
+    const uploads = Object.entries(fileList).map(([keyFileName, rows]) =>
         s3.putObject({
-            Bucket: process.env.BUCKET_NAME,
+            Bucket: bucket,
             Key: `${keyFileName}.csv`,
-            Body: fileList[keyFileName].join('\n')
-        });
-    }).promise().then(() => {
-        callback(null, {
-            statusCode: 200,
-            headers: {
-                'Content-Type': 'text/html'
-            },
-            body: 'Successfully Completed!'
-        });
-    }).catch((err) => callback(err));
+            Body: rows.join('\n'),
+            ContentType: 'text/csv; charset=utf-8',
+        }).promise()
+    );
+
+    Promise.all(uploads)
+        .then(() => {
+            callback(null, {
+                statusCode: 200,
+                headers: { 'Content-Type': 'text/html' },
+                body: 'Successfully Completed!'
+            });
+        })
+        .catch((err) => callback(err));
 }
